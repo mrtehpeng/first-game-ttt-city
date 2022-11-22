@@ -15,15 +15,16 @@ const MOUSESTATE = {
 }
 
 const SPRITESTATE = {
-    IDLE: 1,
-    IS_OVER: 11,
-    IS_SELECTED: 12
+    IDLE: 'IDLE',
+    IS_OVER: 'IS_OVER',
+    IS_SELECTED: 'IS_SELECTED'
 }
 
 const ITEMTYPE = {
-    RESOURCE: 1, 
-    UNIT: 2,
-    BUILDING: 3 
+    TILE: "TILE",
+    RESOURCE: 'RESOURCE', 
+    UNIT: 'UNIT',
+    BUILDING: 'BUILDING' 
 }
 
 const RESOURCES = {

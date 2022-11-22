@@ -8,6 +8,7 @@ class Resources {
         this.width = RESOURCE_SIZE
         this.height = RESOURCE_SIZE
         this.mouseIsOver = false 
+        this.workedBy = undefined // object if Unit that is working.
         this.setImageSrc()
     }
 
@@ -17,11 +18,13 @@ class Resources {
                 this.image = new Image()
                 this.image.src = `./forest.png`
                 break 
-            case RESOURCES.MINE:
-
+            case RESOURCES.MINE: 
+                this.image = new Image()
+                this.image.src = `./mine.png`
                 break 
-            case RESOURCES.LAKE:
-
+            case RESOURCES.LAKE: 
+                this.image = new Image()
+                this.image.src = `./water.png`
                 break 
         } 
     }
@@ -67,9 +70,8 @@ class Farmer extends Unit {
         this.setImageSrc()
     }
 
-    draw() {
-        const img = new Image() 
-        img.src = './farmer-2.png'
+    draw() { 
+        const img = this.image
         c.drawImage(img, 0, 0, img.width, img.height, this.position.x, this.position.y, this.width, this.height)
     } 
 
@@ -90,7 +92,7 @@ class Farmer extends Unit {
         // put farmer into that particular resource. 
         this.state = isOver ? (mouse.holding ? SPRITESTATE.IS_SELECTED : SPRITESTATE.IS_OVER) : SPRITESTATE.IDLE 
         setCursor(isOver ? 'grab' : 'default')
-        
+        console.log(" User state " + this.state )
         if (this.state == SPRITESTATE.IS_SELECTED) { 
             super.updatePosition({ x: mouse.x, y: mouse.y })
         }

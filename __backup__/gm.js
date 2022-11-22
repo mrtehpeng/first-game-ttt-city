@@ -1,10 +1,8 @@
 
-const GameManager = {
-    allResources: [], 
-    allTiles: [],  
-    allUnits: [],
+const GameManager = { 
     allTileProps: [],
     renderables: [],
+    mouse: { x: undefined, y: undefined, holding: false },
     mouseState: MOUSESTATE.IDLE,
     previousMouseState: MOUSESTATE.IDLE,
     isSelected: undefined, 
@@ -19,14 +17,32 @@ const GameManager = {
                 if (!GameManager.isHolding && GameManager.isOver.unit) {
                     GameManager.isHolding = GameManager.isOver.unit 
                 } else if (GameManager.isHolding) {
-                    const arr = [...GameManager.allResources, ...GameManager.allUnits]
-                    GameManager.checkMouseIsOverItem(arr, mouse)
+                    GameManager.checkMouseIsOverItem(GameManager.renderables, mouse)
                 }
                 break 
             case MOUSESTATE.MOVE: { 
                 // if mouse is over x, add unit to x
-                const arr = [...GameManager.allUnits, ...GameManager.allResources, ...GameManager.allUnits]
-                GameManager.checkMouseIsOverItem(arr, mouse)
+                GameManager.checkMouseIsOverItem(GameManager.renderables, mouse)
+                break 
+            }
+            case MOUSESTATE.UP: {
+                if (GameManager.isHolding) { 
+                    switch(GameManager.isHolding.itemType) {
+                        case ITEMTYPE.UNIT: {
+                            if (GameManager.isOver) {
+                                switch(GameManager.isOver.itemType) {
+                                    case ITEMTYPE.RESOURCE:
+                                        GameManager.isOver.workedBy = GameManager.isHolding
+                                        console.log(" OVER_OVER_OVER ", GameManager.isOver)
+                                        
+                                        break 
+                                }
+                            }
+                            break 
+                        }
+                    }
+                }
+                console.log(" ALL RENDERABLES ", GameManager.renderables)
                 break 
             }
         }
@@ -36,11 +52,9 @@ const GameManager = {
             const item = arr[i]
             if (item != GameManager.isHolding) {
                 const isOver = checkCollision(mouse.x, mouse.y, item.position.x, item.position.y, item.width, item.height)
-                
                 if (isOver) {
-                    console.log(" Mouse is over ", item)
                     switch(item.itemType) {
-                        case ITEMTYPE.RESOURCE: 
+                        case ITEMTYPE.RESOURCE:  
                             GameManager.isOver.resource = item
                             break 
                         case ITEMTYPE.UNIT:
@@ -60,10 +74,11 @@ const GameManager = {
         let x = randomInt(1, 4)
         let y = randomInt(1, 4)
         let tileNum = ((y-1) * 3) + x 
-        let position = calculatePlayerPosition(GameManager.allTiles[tileNum - 1])
+        const allTiles = GameManager.renderables.filter(item => item.itemType == ITEMTYPE.TILE)
+        let position = calculatePlayerPosition(allTiles[tileNum - 1])
         unit.position.x = position.x 
         unit.position.y = position.y 
-        GameManager.allUnits.push(unit)
+        GameManager.renderables.push(unit)
     },
     initTiles: () => {
         const colors = ['blue', 'red', 'green', 'purple', 'orange']
@@ -75,7 +90,7 @@ const GameManager = {
                 const bgTile = GameManager.generateTile((run + 1), colors[run % colors.length], xOffset, yOffset)
                 const tileProps = { units: [], buildings: [], resources: bgTile.resources }
                 GameManager.allTileProps.push(tileProps)
-                GameManager.allTiles.push(bgTile)
+                GameManager.renderables.push(bgTile)
                 xOffset += TILE_SIZE
                 run++
             }
@@ -86,13 +101,13 @@ const GameManager = {
     generateTile: (id, color, x, y) => {  
         const randInt = randomInt(0, 10) 
         const tile = new BGTile({ id, color, position: {x, y }, width: TILE_SIZE, height: TILE_SIZE })
-        switch(randInt) {
-            case 1: 
-            case 2: { 
-                const rsc = new Resources({ tile, type: RESOURCES.FOREST, position: calculateResourcePosition(tile) })
-                tile.resources.push(RESOURCES.FOREST)
-                GameManager.allResources.push(rsc)
-            }
+        const { FOREST, MINE, LAKE } = RESOURCES
+        const probs = [ FOREST, FOREST, MINE, LAKE, LAKE]
+        if (randInt < probs.length) {  
+                const rsc = new Resources({ tile, type: probs[randInt], position: calculateResourcePosition(tile) })
+                tile.resources.push(probs[randInt])
+                GameManager.renderables.push(rsc)
+            
         }  
         return tile 
     }
