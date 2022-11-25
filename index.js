@@ -281,7 +281,7 @@ class Card extends Sprite {
         if (this.held || this.isDragged) { 
             if (buttonShadows.length == 0) { 
                 const buttonShadow = new ButtonShadow({ source: this, cardType: this.cardType })
-                console.log(` Card #${this.cardIndex}: Add new button shadow `, buttonShadow)
+                //console.log(` Card #${this.cardIndex}: Add new button shadow `, buttonShadow)
                 buttonShadows.push(buttonShadow)
                 this.isDragged=true
                 this.opacity = 0.65
@@ -338,8 +338,8 @@ class ButtonShadow extends Button {
                             cardType: draggedCard.cardType,
                             position: { cardType: this.cardType, x: mouse.x - (this.image.width/2), y: mouse.y - (this.image.height/2) }, 
                         })
-                        console.log(` Put new card on tile #${tileIndex} ${tiles[tileIndex].cards.length}`, card)
-                        console.log(` Current source `, this.source)
+                        //console.log(` Put new card on tile #${tileIndex} ${tiles[tileIndex].cards.length}`, card)
+                        //console.log(` Current source `, this.source)
 
                         // Reset held card 'held' to false
                         if (draggedCard.spriteType == SPRITETYPE.CARD) { 
@@ -373,20 +373,24 @@ const tiles = []
 const buttonShadows = []
 GM.generateTiles()
 
+let elapsed = 0
 Events.register()
 function animate() {
     requestAnimationFrame(animate) 
-    c.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-    c.fillStyle = '#333'
-    c.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-    renderables.forEach(r => r.update())
-    tiles.forEach((tile, tindex) => {
-        tile.cards.forEach((card, index) => {
-            let isTop = index == tile.cards.length - 1
-            card.setCardPositionBasedOnIndex(tindex, index, isTop)
-            card.update()
+    if (elapsed % 2 == 0) { 
+        c.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        c.fillStyle = '#333'
+        c.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        renderables.forEach(r => r.update())
+        tiles.forEach((tile, tindex) => {
+            tile.cards.forEach((card, index) => {
+                let isTop = index == tile.cards.length - 1
+                card.setCardPositionBasedOnIndex(tindex, index, isTop)
+                card.update()
+            })
         })
-    })
-    buttonShadows.forEach((buttonShadow) => buttonShadow.update())
+        buttonShadows.forEach((buttonShadow) => buttonShadow.update())
+    }
+    elapsed++
 }
 animate()

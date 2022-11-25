@@ -58,8 +58,7 @@ const Utils = {
     randomInt: (min, max) => {
         return Math.floor(Math.random() * (max - min) + min);
     },
-    setCursor: (cursor) => {
-        console.log(`setCursor ${cursor}`)
+    setCursor: (cursor) => { 
         document.body.style.cursor = cursor
     },
     checkCollision: (x1, y1, x2, y2, w, h) => {
