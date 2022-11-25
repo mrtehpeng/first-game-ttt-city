@@ -8,7 +8,7 @@ const GM = {
         for (let y=0; y<3; y++) {
             for (let x=0; x<3; x++) {
                 const color = colors[run % colors.length]
-                const tile = new Tile({ position: { x: x * TILE_SIZE, y: y * TILE_SIZE }, width: TILE_SIZE, height: TILE_SIZE, color })
+                const tile = new Tile({ tileType: TILETYPE.GRASS, position: { x: x * TILE_SIZE, y: y * TILE_SIZE }, width: TILE_SIZE, height: TILE_SIZE })
                 tiles.push({ index: run, x: tile.position.x, y: tile.position.y, cards: [] })
                 renderables.push(tile)
                 run++
@@ -30,6 +30,21 @@ SPRITETYPE = {
     BUTTONSHADOW: 'BUTTONSHADOW',
     CARD: 'CARD'
 }
+
+TILETYPE = {
+    GRASS: 'grass'
+}
+
+UNITSTATS = {
+    'card': {
+        attk: 2, def: 2, hp: 2
+    }, 
+    'gold-card': {
+        attk: 4, def: 3, hp: 5
+    }
+}
+
+
 /**
  * Returns a random number between min (inclusive) and max (exclusive)
  */

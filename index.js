@@ -71,8 +71,7 @@ class Sprite {
     }
 
     animateFrames() {
-        this.frames.elapsed++
-    
+        this.frames.elapsed++ 
         if (this.frames.elapsed % this.frames.hold === 0) {
           if (this.frames.current < this.frames.max - 1) {
             this.frames.current++
@@ -91,11 +90,22 @@ class Sprite {
 class Tile extends Sprite {
     constructor(params) {
         super(params)
+        const { tileType } = params 
+        this.tileType = tileType
         this.spriteType = SPRITETYPE.TILE
+        this.setSprite()
+        this.switchSprite()
     } 
+
+    setSprite() {
+        this.sprites = TileRsc[this.tileType] ?? TileRsc[TILETYPE.GRASS]
+    }
 
     update() {
         this.draw()
+        const mouse = GM.mouse 
+        this.selected = Utils.checkCollision(mouse.x, mouse.y, this.position.x, this.position.y, this.image.width, this.image.height)
+        this.switchSprite(this.selected ? 'selected' : 'idle')
     }
 }
 
@@ -112,44 +122,7 @@ class Button extends Sprite {
     }   
 
     setSpriteBasedOnUnitType() {
-        switch(this.cardType) {
-            case 'farmer': 
-                this.sprites = {
-                    selected: {
-                        image: './farmer-2-selected.png',
-                        frames: { max: 1 }
-                    },
-                    idle: {
-                        image: './farmer-2.png',
-                        frames: { max: 1 }
-                    }
-                }
-            break
-            case 'card': 
-                this.sprites = {
-                    selected: {
-                        image: './card.png',
-                        frames: { max: 1 }
-                    },
-                    idle: {
-                        image: './card.png',
-                        frames: { max: 1 }
-                    }
-                }
-            break
-            case 'gold-card': 
-                this.sprites = {
-                    selected: {
-                        image: './gold-card.png',
-                        frames: { max: 1 }
-                    },
-                    idle: {
-                        image: './gold-card.png',
-                        frames: { max: 1 }
-                    }
-                }
-            break
-        }
+        this.sprites = CardRsc[this.cardType] ?? CardRsc['card']
     }
 
     update() {
@@ -161,9 +134,7 @@ class Button extends Sprite {
         if (selected != this.selected) { 
             Utils.setCursor(this.selected || this.held ? 'grab' : 'default')
         }
-        this.switchSprite(this.selected ? 'selected' : 'idle')
-        console.log(`Button update ${this.selected || this.held}`)
-        
+        this.switchSprite(this.selected ? 'selected' : 'idle') 
         // Add ButtonShadow
         if (this.selected && this.held) { 
             if (buttonShadows.length == 0) {
@@ -216,6 +187,30 @@ class Unit extends Sprite {
     }
 }
 
+class Number {
+    constructor(params) { 
+        const { number, position } = params 
+        this.number = number  
+        this.position = position  
+        switch (number) {
+            case 1: case 2: 
+            case 3: case 4: 
+            case 5: this.crop = { x: 16 * (number - 1), y: 0 }; break
+            case 0: this.crop = { x: 16 * 4, y: 0 }; break  
+            default: this.crop = { x: 16 * ((number - 1) % 5), y: 16 }; break 
+        }
+    }
+
+    draw() {
+        const NUM_SIZE = 16
+        const image = new Image()
+        image.src = './numbers.png' 
+        c.drawImage(image, this.crop.x, this.crop.y, NUM_SIZE, NUM_SIZE, this.position.x, this.position.y, NUM_SIZE, NUM_SIZE)
+    }
+
+    update() { this.draw() }
+}
+
 class Card extends Sprite {
     /**
      * tileIndex = 0 ~ 8
@@ -227,7 +222,8 @@ class Card extends Sprite {
         const { cardType='card', tileIndex, cardIndex } = params 
         this.cardType = cardType
         this.setSpriteBasedOnUnitType()
-        this.switchSprite()
+        this.switchSprite() 
+        this.setStats()
         this.spriteType = SPRITETYPE.CARD 
         this.tileIndex=tileIndex 
         this.cardIndex=cardIndex
@@ -235,44 +231,32 @@ class Card extends Sprite {
         this.isDragged = false 
     } 
 
+    setStats() {
+        this.stats = UNITSTATS[this.cardType] ?? UNITSTATS['card']
+    }
+
     setSpriteBasedOnUnitType() {
-        switch(this.cardType) {
-            case 'card': 
-                this.sprites = {
-                    selected: {
-                        image: './card.png',
-                        frames: { max: 1 }
-                    },
-                    idle: {
-                        image: './card.png',
-                        frames: {max: 1}
-                    }
-                }
-            break
-            case 'gold-card': 
-                this.sprites = {
-                    selected: {
-                        image: './gold-card.png',
-                        frames: { max: 1 }
-                    },
-                    idle: {
-                        image: './gold-card.png',
-                        frames: {max: 1}
-                    }
-                }
-            break
-        }
+        this.sprites = CardRsc[this.cardType] ?? CardRsc['card']
     }
 
     setCardPositionBasedOnIndex(tile, index, isTop=false) {
         this.position.x = ((tile % 3) * TILE_SIZE) + 3 + ((index % 5) * 17) 
-        this.position.y = (Math.floor(tile / 3) * TILE_SIZE) + 42
+        this.position.y = (Math.floor(tile / 3) * TILE_SIZE) + 36
         this.cardIndex=index
         this.isTopCard=isTop
     }
 
     update() { 
         this.draw()
+        
+        // Draw stats
+        const attk = new Number({ position: {x: this.position.x + 70, y: this.position.y + 42 }, number: this.stats.attk })
+        const def = new Number({ position: {x: this.position.x + 70, y: this.position.y + 57 }, number: this.stats.def })
+        const hp = new Number({ position: {x: this.position.x + 70, y: this.position.y + 72 }, number: this.stats.hp }) 
+        attk.update()
+        def.update()
+        hp.update()
+
         const mouse = GM.mouse
         const selected = this.selected 
         const w = this.isTopCard ? this.image.width : (this.cardIndex < 4 ? 17 : this.image.width)
@@ -288,19 +272,19 @@ class Card extends Sprite {
         if (draggedCard && draggedCard._id == this._id) this.isDragged = draggedCard
         else this.isDragged = false
 
-        if (this.selected || this.isDragged) this.position.offsetY = -10
+        if (!draggedCard && (this.selected || this.isDragged)) this.position.offsetY = -10
         else this.position.offsetY = 0
 
         this.switchSprite(this.selected ? 'selected' : 'idle') 
 
         // Add ButtonShadow
         if (this.held || this.isDragged) { 
-            this.opacity = 0.75
             if (buttonShadows.length == 0) { 
                 const buttonShadow = new ButtonShadow({ source: this, cardType: this.cardType })
                 console.log(` Card #${this.cardIndex}: Add new button shadow `, buttonShadow)
                 buttonShadows.push(buttonShadow)
                 this.isDragged=true
+                this.opacity = 0.65
                 draggedCard = this 
             }
         } else { 
@@ -321,16 +305,7 @@ class ButtonShadow extends Button {
     }
 
     getCardImage() {
-        switch(this.cardType) {
-            case 'farmer':
-                return './farmer-2-selected.png'
-            case 'card':
-                return './card.png'
-            case 'gold-card':
-                return './gold-card.png'
-            default: 
-                return './card.png'
-        }
+        return ButtonShadowRsc[this.cardType] ?? './card.png' 
     }
 
     draw() {
