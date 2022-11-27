@@ -109,43 +109,6 @@ class Tile extends Sprite {
     }
 }
 
-class Button extends Sprite {
-    constructor(params) {  
-        super(params) 
-        const { cardType='card' } = params 
-        this.cardType = cardType
-        this.spriteType = SPRITETYPE.BUTTON
-        this.setSpriteBasedOnUnitType()
-        this.switchSprite()
-        this.width = this.image.width  
-        this.height = this.image.height
-    }   
-
-    setSpriteBasedOnUnitType() {
-        this.sprites = CardRsc[this.cardType] ?? CardRsc['card']
-    }
-
-    update() {
-        this.draw()
-        const mouse = GM.mouse
-        this.held = mouse.hold
-        let selected = this.selected 
-        this.selected = Utils.checkCollision(mouse.x, mouse.y, this.position.x, this.position.y, this.image.width, this.image.height)
-        if (selected != this.selected) { 
-            Utils.setCursor(this.selected || this.held ? 'grab' : 'default')
-        }
-        this.switchSprite(this.selected ? 'selected' : 'idle') 
-        // Add ButtonShadow
-        if (this.selected && this.held) { 
-            if (buttonShadows.length == 0) {
-                draggedCard=this
-                buttonShadows.push(new ButtonShadow({ source: this, cardType: this.cardType }))
-            }
-        } 
-        
-    }
-}
-
 class Unit extends Sprite {
     constructor(params) { 
         super(params) 
@@ -219,12 +182,12 @@ class Card extends Sprite {
      */
     constructor(params) { 
         super(params) 
-        const { cardType='card', tileIndex, cardIndex } = params 
+        const { cardType='card', spriteType=SPRITETYPE.CARD, tileIndex, cardIndex } = params 
         this.cardType = cardType
         this.setSpriteBasedOnUnitType()
         this.switchSprite() 
-        this.setStats()
-        this.spriteType = SPRITETYPE.CARD 
+        this.setStats() 
+        this.spriteType = spriteType
         this.tileIndex=tileIndex 
         this.cardIndex=cardIndex
         this.isTopCard=false 
@@ -246,16 +209,19 @@ class Card extends Sprite {
         this.isTopCard=isTop
     }
 
-    update() { 
-        this.draw()
-        
+    drawStats() { 
         // Draw stats
-        const attk = new Number({ position: {x: this.position.x + 70, y: this.position.y + 42 }, number: this.stats.attk })
-        const def = new Number({ position: {x: this.position.x + 70, y: this.position.y + 57 }, number: this.stats.def })
-        const hp = new Number({ position: {x: this.position.x + 70, y: this.position.y + 72 }, number: this.stats.hp }) 
+        const Y = this.position.y + this.position.offsetY
+        const attk = new Number({ position: {x: this.position.x + 70, y: Y + 42 }, number: this.stats.attk })
+        const def = new Number({ position: {x: this.position.x + 70, y: Y + 57 }, number: this.stats.def })
+        const hp = new Number({ position: {x: this.position.x + 70, y: Y + 72 }, number: this.stats.hp }) 
         attk.update()
         def.update()
         hp.update()
+    }
+
+    update() { 
+        this.draw()
 
         const mouse = GM.mouse
         const selected = this.selected 
@@ -267,20 +233,22 @@ class Card extends Sprite {
             // Selection change 
             Utils.setCursor(this.selected || this.held ? 'grab' : 'default')
             this.held = false
-        }
+        } 
 
         if (draggedCard && draggedCard._id == this._id) this.isDragged = draggedCard
         else this.isDragged = false
 
-        if (!draggedCard && (this.selected || this.isDragged)) this.position.offsetY = -10
+        if (draggedCard && (this.selected || this.isDragged)) this.position.offsetY = -10
         else this.position.offsetY = 0
+
+        this.drawStats()
 
         this.switchSprite(this.selected ? 'selected' : 'idle') 
 
         // Add ButtonShadow
         if (this.held || this.isDragged) { 
             if (buttonShadows.length == 0) { 
-                const buttonShadow = new ButtonShadow({ source: this, cardType: this.cardType })
+                const buttonShadow = new CardShadow({ position: { x: mouse.x - (this.image.width/2), y: mouse.y - (this.image.height/2) }, stats: this.stats, source: this, cardType: this.cardType })
                 //console.log(` Card #${this.cardIndex}: Add new button shadow `, buttonShadow)
                 buttonShadows.push(buttonShadow)
                 this.isDragged=true
@@ -289,6 +257,121 @@ class Card extends Sprite {
             }
         } else { 
             this.opacity = 1
+        }
+    }
+}
+
+class Button extends Card {
+    constructor(params) {  
+        super(params)  
+        const { cardType } = params 
+        this.cardType = cardType
+        this.spriteType = SPRITETYPE.BUTTON
+        this.setSpriteBasedOnUnitType()
+        this.switchSprite()
+        this.width = this.image.width  
+        this.height = this.image.height
+    }   
+
+    setSpriteBasedOnUnitType() {
+        this.sprites = CardRsc[this.cardType] ?? CardRsc['card']
+    }
+
+    update() {
+        this.draw()
+        this.drawStats()
+        const mouse = GM.mouse
+        this.held = mouse.hold
+        let selected = this.selected 
+        this.selected = Utils.checkCollision(mouse.x, mouse.y, this.position.x, this.position.y, this.image.width, this.image.height)
+        if (selected != this.selected) { 
+            Utils.setCursor(this.selected || this.held ? 'grab' : 'default')
+        }
+        this.switchSprite(this.selected ? 'selected' : 'idle') 
+        // Add ButtonShadow
+        if (this.selected && this.held) { 
+            if (buttonShadows.length == 0) {
+                draggedCard=this
+                buttonShadows.push(new CardShadow({ position: { x: mouse.x - (this.image.width/2), y: mouse.y - (this.image.height/2) }, stats: UNITSTATS[this.cardType], source: this, cardType: this.cardType }))
+            }
+        } 
+        
+    }
+}
+
+class CardShadow extends Card {
+    constructor(params) {
+        super({ ...params })
+        const { cardType, source, stats } = params
+        this.stats = stats 
+        this.selected = true
+        this.held = true   
+        this.source = source
+        this.cardType = cardType 
+        this.spriteType = SPRITETYPE.BUTTONSHADOW 
+    }
+
+    getCardImage() {
+        return ButtonShadowRsc[this.cardType] ?? './card.png' 
+    }
+
+    draw() {
+        const mouse = GM.mouse 
+        const farmer = this.getCardImage()
+        this.image = new Image()
+        this.image.src = farmer 
+        c.globalAlpha = 0.75
+        c.drawImage(this.image, 0, 0, this.image.width, this.image.height, mouse.x - (this.image.width/2), mouse.y - (this.image.height/2), this.image.width, this.image.height)
+        c.globalAlpha = 1
+    }
+
+    update() {
+        this.draw()
+        const mouse = GM.mouse  
+        this.position = mouse
+        // Draw stats
+        const X = this.position.x - (this.image.width/2)
+        const Y =this.position.y - (this.image.height/2)
+        const attk = new Number({ position: {x: X + 70, y: Y + 42 }, number: this.stats.attk })
+        const def = new Number({ position: {x: X + 70, y: Y + 57 }, number: this.stats.def })
+        const hp = new Number({ position: {x: X + 70, y: Y + 72 }, number: this.stats.hp }) 
+        attk.update()
+        def.update()
+        hp.update()
+        
+        this.held = mouse.hold 
+        if (!this.held) {
+            let tileIndex = Utils.checkOverTile(mouse.x, mouse.y)
+            console.log(` Over tile? index=${tileIndex}`)
+            if (draggedCard) { 
+                // Put ButtonShadow down   
+                if (buttonShadows.length == 1 && tileIndex > -1) {  
+                    let cardLength = tiles[tileIndex].cards.length 
+                    const isSameIndex = draggedCard.tileIndex == tileIndex
+                    let addCard = isSameIndex || cardLength < 5 
+                    if (addCard) { 
+                        const card = new Card({ 
+                            tileIndex: tileIndex,
+                            cardIndex: cardLength,
+                            cardType: draggedCard.cardType,
+                            position: { x: mouse.x - (this.image.width/2), y: mouse.y - (this.image.height/2) }, 
+                        })
+                        //console.log(` Put new card on tile #${tileIndex} ${tiles[tileIndex].cards.length}`, card)
+                        //console.log(` Current source `, this.source)
+
+                        // Reset held card 'held' to false
+                        if (draggedCard.spriteType == SPRITETYPE.CARD) { 
+                            tiles[draggedCard.tileIndex].cards.splice(draggedCard.cardIndex, 1)
+                            draggedCard = null
+                            //tiles[this.source.tileIndex].cards[this.source.cardIndex].held = false
+                        }
+
+                        tiles[tileIndex].cards.push(card)
+                    }
+                }
+                
+                buttonShadows.length = 0
+            }
         }
     }
 }
@@ -358,11 +441,13 @@ class ButtonShadow extends Button {
 }
 
 const cardButton = new Button({ 
+    draggable: false,
     position: { x: TILE_SIZE * 3 + 10, y: 100 }, 
     cardType: 'card', 
 }) 
 
 const goldCardButton = new Button({ 
+    spriteType: SPRITETYPE.CARDBUTTON,
     position: { x: TILE_SIZE * 3 + 10, y: TILE_SIZE + 100 }, 
     cardType: 'gold-card', 
 }) 
@@ -373,6 +458,7 @@ const tiles = []
 const buttonShadows = []
 GM.generateTiles()
 
+let turn = 1
 let elapsed = 0
 Events.register()
 function animate() {

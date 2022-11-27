@@ -28,7 +28,8 @@ SPRITETYPE = {
     UNIT: 'UNIT',
     BUTTON: 'BUTTON',
     BUTTONSHADOW: 'BUTTONSHADOW',
-    CARD: 'CARD'
+    CARD: 'CARD',
+    CARDBUTTON: 'CARDBUTTON'
 }
 
 TILETYPE = {
@@ -80,10 +81,11 @@ const Utils = {
         tiles.forEach((tile) => {
             const yes = Utils.checkCollision(x, y, tile.x, tile.y, TILE_SIZE, TILE_SIZE) 
             if (yes) {
-                tileIndex = tile.index 
+                tileIndex = tile.index  
             }
         })
-        return tileIndex - 1
+        if (tileIndex == -1) return tileIndex
+        return tileIndex -1
     },
     randStr(len) {
         const abc = "abcdefghijklmnopqrstuvwxyz"
